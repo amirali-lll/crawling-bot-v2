@@ -25,7 +25,7 @@ private:
     int currentDownAngle;
     int currentUpAngle;
 
-    static const int INITIAL_DOWN_ANGLE = 0;
+    static const int INITIAL_DOWN_ANGLE = 180;
     static const int INITIAL_UP_ANGLE = 180;
     
     void moveServoSmooth(Servo &servo, int &currentAngle, int targetAngle, int stepDelay);
