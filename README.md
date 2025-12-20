@@ -1,249 +1,133 @@
-# Crawling Bot V2 - PlatformIO Migration
+# Crawling Bot V2 - AI Learning Platform
 
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-ESP32-orange.svg)](https://platformio.org/)
+[![IUST](https://img.shields.io/badge/IUST-AI%20Course-blue.svg)](https://iust.ac.ir)
+[![VILS Lab](https://img.shields.io/badge/VILS-Lab%20Course-blue.svg)](https://vils-lab.github.io)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## 📋 Table of Contents
-- [Overview](#overview)
-- [Hardware Changes](#hardware-changes)
-- [Architecture](#architecture)
-- [Pin Configuration](#pin-configuration)
-- [Dependencies](#dependencies)
-- [Building and Uploading](#building-and-uploading)
-- [Documentation](#documentation)
-- [Quick Links](#quick-links)
+> 🎓 **An intelligent crawling robot for IUST University's AI course**  
+> Students implement Reinforcement Learning algorithms to teach the robot autonomous movement.
+
+**📖 [مستندات فارسی (Persian Documentation)](README.fa.md)**
+
+![Crawling Bot V2](docs/img/robot-overview.jpg)
 
 ## Overview
-This is the PlatformIO version of the crawling bot, migrated from the original Arduino code. The code has been restructured with a clean, library-based architecture for better maintainability and modularity.
+
+A hands-on robotics platform where AI students apply **Reinforcement Learning** theory to real hardware. The robot features ESP32 microcontroller, 9-DOF motion sensors, servo actuators, and a modular software architecture designed for easy RL implementation.
 
 **Key Features:**
-- 🖥️ OLED display with 128x64 resolution
-- 🧭 9-DOF AHRS sensor (MPU9250)
-- 🎮 Smooth servo control
-- 📡 WiFi AP and OTA updates
-- 🤖 Ready for reinforcement learning
 
-## Hardware Changes
-- **Display**: Migrated from LCD 16x2 (I2C) to OLED 0.96" SSD1306 display
-- **Motion Sensor**: Replaced SRF-05 ultrasonic sensor with MPU9250 AHRS (Attitude and Heading Reference System)
-- **Board**: ESP32-S3-DevKitM-1
+- 🧠 Ready-to-code RL template in `lib/Training/`
+- 🎮 Full sensor suite for state observation (9-DOF AHRS)
+- 🔧 Two servo motors for action execution
+- 📡 WiFi + OTA for wireless development
+- 🖥️ OLED display for real-time feedback
 
-## Architecture
+**What Makes It Special:**
 
-### Libraries Structure
-The project uses a modular library-based architecture with separate responsibilities:
+- Bridge theory to practice with real hardware
+- Modular libraries handle hardware complexity
+- Focus on RL algorithm implementation
+- Quick iteration with OTA updates
 
-#### 1. Display Library (`lib/Display/`)
-Manages the OLED 0.96" display with SSD1306 driver.
+## For Students
 
-**Features:**
-- Initialize and configure OLED display
-- Print text and numbers at specific coordinates
-- Clear display
-- Draw progress bars (for OTA updates)
-- Cursor positioning
+### Your 3-Phase Project Journey
 
-**Usage:**
-```cpp
-Display display;
-display.begin();
-display.print("Hello World", 0, 0);
-display.clear();
-```
+**Phase 1: Hello Hardware** (Week 1)
 
-#### 2. AHRS Library (`lib/AHRS/`)
-Manages the MPU9250 sensor with full AHRS capabilities.
+- Upload basic code and test all components
+- Make robot display "Hello World"
+- Implement simple "bye-bye" wave movement
+- ✅ Verify hardware works correctly
 
-**Features:**
-- 9-DOF sensor data (accelerometer, gyroscope, magnetometer)
-- Orientation (roll, pitch, yaw)
-- Quaternion data
-- Motion detection
-- Displacement tracking
-- Temperature sensing
-- Sensor calibration
+**Phase 2: Build Your RL Algorithm** (Weeks 2)
 
-**Usage:**
-```cpp
-AHRS ahrs;
-ahrs.begin();
-ahrs.update(); // Call frequently in loop
+- Design and code your RL algorithm (Q-Learning, SARSA, DQN, etc.)
+- Test algorithm logic separately
+- Define reward functions and state/action spaces
+- ✅ Algorithm ready for integration
 
-float roll = ahrs.getRoll();
-float pitch = ahrs.getPitch();
-float yaw = ahrs.getYaw();
-bool moving = ahrs.isMoving();
-```
+**Phase 3: Train Your Robot** (Weeks 3-4)
 
-#### 3. ServoControl Library (`lib/ServoControl/`)
-Manages the two servo motors with smooth movement capabilities.
+- Integrate RL algorithm with robot hardware
+- Use sensor data for state observation
+- Control servos based on learned policy
+- ✅ Autonomous crawling achieved!
 
-**Features:**
-- Control two servos (down and up)
-- Instant movement
-- Smooth movement with configurable speed
-- Position tracking
-- Preset positions (initial, test)
+### What You'll Work With
 
-**Usage:**
-```cpp
-ServoControl servos(PIN_DOWN, PIN_UP);
-servos.begin();
-servos.moveDownSmooth(90, 10);
-servos.setInitialPosition();
-```
+**Sensors** (for state observation):
 
-#### 4. Network Library (`lib/Network/`)
-Manages WiFi Access Point and OTA (Over-The-Air) updates.
+- 9-DOF motion sensor (acceleration, rotation, orientation)
+- Real-time position and movement tracking
 
-**Features:**
-- WiFi AP setup with robot-specific SSID
-- OTA update handling with progress display
-- Robot number management (EEPROM)
-- Async OTA task using FreeRTOS
-- mDNS hostname setup
+**Actuators** (for actions):
 
-**Usage:**
-```cpp
-Network network(&display);
-network.begin();
-network.startOTATask();
-uint8_t robotNum = network.getRobotNumber();
-```
+- 2 servo motors for leg control
+- Configurable speed and smooth movement
 
-#### 5. Training Library (`lib/Training/`)
-**Currently empty** - Template for future implementation of reinforcement learning.
+**Your Code Goes Here:** `lib/Training/Training.cpp` - Ready-to-fill template for your RL implementation!
 
-**Planned Features:**
-- Training mode activation
-- Model training and learning
-- Learned behavior execution
-- Model save/load functionality
+> 📖 **See [EXAMPLES.md](docs/EXAMPLES.md) for RL code samples and [PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md) for technical details**
 
-**Usage:**
-```cpp
-Training training;
-training.begin();
-// Future: training.startTraining();
-// Future: training.executeLearnedBehavior();
-```
+## Getting Started
 
-## Pin Configuration
+### Quick Setup (5 Minutes)
 
-```cpp
-SERVO_PIN_DOWN = 32  // Lower servo motor
-SERVO_PIN_UP = 33    // Upper servo motor
-I2C SDA = Default ESP32 SDA pin
-I2C SCL = Default ESP32 SCL pin
-```
+1. **Install Tools**
 
-## Dependencies
+   - Install [VSCode](https://code.visualstudio.com/)
+   - Install [PlatformIO extension](https://platformio.org/install/ide?install=vscode)
 
-Defined in `platformio.ini`:
-- `adafruit/Adafruit SSD1306` - OLED display driver
-- `adafruit/Adafruit GFX Library` - Graphics library
-- `adafruit/Adafruit BusIO` - I2C/SPI support
-- `hideakitai/MPU9250` - AHRS sensor library
-- `madhephaestus/ESP32Servo` - ESP32 servo control
+2. **Clone & Build**
 
-## Building and Uploading
+   ```bash
+   git clone https://github.com/amirali-lll/crawling-bot-v2.git
+   cd crawling-bot-v2
+   pio run --target upload
+   ```
 
-```bash
-# Build the project
-pio run
+3. **Configure Robot**
 
-# Upload to board
-pio run --target upload
+   - Open serial monitor (115200 baud)
+   - Enter robot number (1-8) when prompted
+   - Robot creates WiFi AP: `ESP32-AP-{number}`
 
-# Monitor serial output
-pio device monitor
+4. **Start Coding**
+   - Open `lib/Training/Training.cpp`
+   - Implement your RL algorithm
+   - Upload via OTA: Connect to robot WiFi → `pio run --target upload`
 
-# Build and upload
-pio run --target upload && pio device monitor
-```
-
-## OTA Updates
-
-After initial upload, you can update wirelessly:
-1. Robot creates AP with SSID: `ESP32-AP-{robot_number}`
-2. Password: `12345678`
-3. OTA hostname: `ESP32-OTA-{robot_number}`
-4. Use PlatformIO OTA or Arduino IDE OTA to upload
-
-## Robot Number Configuration
-
-Each robot has a unique number (1-8) stored in EEPROM. On first boot:
-1. Robot prompts for number via Serial (115200 baud)
-2. Enter number 1-8
-3. Number is saved and used for AP SSID and OTA hostname
-
-## Health Check
-
-On startup, the robot performs a health check:
-1. Tests AHRS sensor (displays orientation)
-2. Tests servo motors (moves to test position and back)
-3. Displays status on OLED
-
-## Future Development
-
-The Training library is designed to be filled with:
-- Reinforcement learning algorithms
-- Neural network integration
-- Behavior learning and execution
-- Model persistence
-
-## Migration Notes
-
-Changes from original Arduino code:
-- ✅ LCD → OLED display
-- ✅ SRF-05 → MPU9250 AHRS
-- ✅ Monolithic code → Library-based architecture
-- ✅ Enhanced AHRS capabilities (9-DOF, quaternions, calibration)
-- ✅ Improved code organization and maintainability
-- ⏳ Training/Learning (template ready for implementation)
+> 📖 **Detailed setup guide:** [QUICKSTART.md](docs/QUICKSTART.md) | [BUILD.md](docs/BUILD.md)
 
 ## Documentation
 
-This project includes comprehensive documentation:
+| Document                                         | What's Inside                         |
+| ------------------------------------------------ | ------------------------------------- |
+| 📖 [QUICKSTART.md](docs/QUICKSTART.md)           | 5-minute setup guide                  |
+| 🔧 [BUILD.md](docs/BUILD.md)                     | Detailed build & deployment           |
+| 💻 [EXAMPLES.md](docs/EXAMPLES.md)               | RL code examples & snippets           |
+| 📊 [PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md) | Full technical documentation          |
+| 🔄 [MIGRATION.md](docs/MIGRATION.md)             | Arduino to PlatformIO migration notes |
 
-### 📚 Quick Links
+## Hardware & Architecture
 
-| Document | Description |
-|----------|-------------|
-| [QUICKSTART.md](QUICKSTART.md) | Get started in 5 minutes |
-| [BUILD.md](BUILD.md) | Detailed build and deployment guide |
-| [MIGRATION.md](MIGRATION.md) | Migration guide from Arduino to PlatformIO |
-| [EXAMPLES.md](EXAMPLES.md) | Code examples for all libraries |
-| [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | Complete project overview |
+**Hardware:** ESP32-S3, MPU9250 (9-DOF), 2x Servos, OLED Display  
+**Software:** 5 modular libraries (Display, AHRS, ServoControl, Network, Training)  
+**Power:** 12V adapter
 
-### 📊 Project Statistics
+> 📖 **Full specs:** See [PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md#hardware) and [PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md#architecture)
 
-- **Code**: ~923 lines (C++/Arduino)
-- **Documentation**: ~1,373 lines (Markdown)
-- **Libraries**: 5 modular components
-- **Examples**: 15+ code snippets
+## Support & Contributing
 
-## Contributing
-
-Contributions are welcome! Please:
-1. Follow the existing code structure
-2. Keep libraries independent and focused
-3. Update documentation for any API changes
-4. Add examples for new features
-5. Test on actual hardware
-
-## License
-
-[Specify your license here]
-
-## Credits
-
-- **Original Arduino Code**: amirali-lll
-- **PlatformIO Migration**: GitHub Copilot
-- **Libraries**: Adafruit, hideakitai, madhephaestus
+- **Questions?** Check [docs/](docs/) folder or open an [issue](https://github.com/amirali-lll/crawling-bot-v2/issues)
+- **Contributing:** PRs welcome! Focus on RL implementations, examples, and documentation
+- **Course:** IUST University - AI Course
 
 ---
 
-**Status**: ✅ Migration Complete - Ready for Hardware Testing  
-**Version**: 2.0  
-**Last Updated**: December 2025
+**🎓 Make Your Robot Crawl with AI! 🤖**
+
+_Designed for IUST AI students | MIT License | Built with PlatformIO_
