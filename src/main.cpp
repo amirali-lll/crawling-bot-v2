@@ -21,28 +21,30 @@ HealthCheck healthCheck(&display, &ahrs, &servoControl);
 void setup()
 {
     Serial.begin(115200);
-    delay(1000);
-
     // Initialize Display
     display.begin();
+    delay(2000);
+
     display.clear();
     display.print("RL Robot V2", 0, 0);
     display.setCursor(0, 16);
     display.print("Initializing...");
-    delay(1000);
-
     // Initialize Network
     network = new Network(&display);
     network->begin();
     network->startOTATask();
 
+    // Get robot number 
+    display.setCursor(0, 32);
+    display.print("Getting Robot Number from EEPROM...");
+    int robotNum = network->getRobotNumber();
+    
     // Display robot info
     display.clear();
     display.print("Robot #", 0, 0);
-    display.print(network->getRobotNumber());
+    display.print(robotNum, 60, 0);
     display.setCursor(0, 16);
     display.print("Setup...");
-    delay(1000);
 
     // Initialize AHRS
     display.clear();
@@ -65,15 +67,20 @@ void setup()
     servoControl.begin();
     display.setCursor(0, 16);
     display.print("Servos OK");
-    delay(1000);
-
-    // Initialize Training
-    training.begin();
+    delay(500);
 
     // Setup complete
     display.clear();
     display.print("Setup Complete", 0, 0);
-    delay(2000);
+    delay(500);
+
+    // Calibrate AHRS
+    display.clear();
+    display.print("Calibrating AHRS", 0, 0);
+    ahrs.calibrateAccelGyro();
+    display.setCursor(0, 16);
+    display.print("Calibration Done");
+    delay(300);
 
     // Run health check
     healthCheck.run();
@@ -84,44 +91,8 @@ void setup()
 
 void loop()
 {
-    // Update AHRS
     ahrs.update();
 
-    // ===== MODE 1: Real-time continuous display =====
-    // Uncomment this section to show current instantaneous values
-    /*
-    display.clear();
-
-    // Line 1: Speed (cm/s)
-    display.setCursor(0, 0);
-    display.print("Spd: ");
-    display.print(ahrs.getSpeed() * 100, 1);
-    display.print(" cm/s");
-
-    // Line 2: Acceleration (m/s^2)
-    display.setCursor(0, 12);
-    display.print("Acc: ");
-    display.print(ahrs.getAccelMagnitude(), 2);
-    display.print(" m/s2");
-
-    // Line 3: Displacement X (cm)
-    display.setCursor(0, 24);
-    display.print("X: ");
-    display.print(ahrs.getDisplacementX() * 100, 1);
-    display.print(" cm");
-
-    // Line 4: Displacement Y (cm)
-    display.setCursor(0, 36);
-    display.print("Y: ");
-    display.print(ahrs.getDisplacementY() * 100, 1);
-    display.print(" cm");
-
-    display.refresh();
-    delay(1000);
-    */
-
-    // ===== MODE 2: Interval measurement (every 2 seconds) =====
-    // This shows average movement parameters since last measurement
     static unsigned long lastMeasurement = 0;
     unsigned long currentTime = millis();
 
@@ -138,26 +109,27 @@ void loop()
         // Line 1: Distance moved in interval (cm)
         display.setCursor(0, 0);
         display.print("Dist: ");
-        display.print(measurement.deltaDistance, 1);
+        display.print(measurement.deltaDistance);
         display.print(" cm");
 
         // Line 2: Average speed in interval (cm/s)
-        display.setCursor(1, 0);
+        display.setCursor(0, 12);
         display.print("Spd: ");
-        display.print(measurement.avgSpeed, 1);
+        display.print(measurement.avgSpeed);
         display.print(" cm/s");
 
         // Line 3: Average acceleration in interval (m/s^2)
-        display.setCursor(2, 0);
+        display.setCursor(0, 24);
         display.print("Acc: ");
-        display.print(measurement.avgAcceleration, 2);
+        display.print(measurement.avgAcceleration);
         display.print(" m/s2");
 
         // Line 4: Time interval
-        display.setCursor(3, 0);
+        display.setCursor(0, 36);
         display.print("Time: ");
-        display.print(measurement.deltaTime, 1);
+        display.print(measurement.deltaTime);
         display.print(" s");
+        
 
         display.refresh();
 
@@ -172,6 +144,29 @@ void loop()
         Serial.print(" cm/s, Accel: ");
         Serial.print(measurement.avgAcceleration);
         Serial.println(" m/s2");
+        // add serial monitoring also for these data ax, ay, az (همون getAccX/Y/Z)roll, pitch, yaw accMag = sqrt(ax ^ 2 + ay ^ 2 + az ^ 2) dt velocityX, Y, Z و displacementX, Y, Z
+        Serial.print("Accel X: ");
+        Serial.print(ahrs.getAccelX());
+        Serial.print(" m/s2, Y: ");
+        Serial.print(ahrs.getAccelY());
+        Serial.print(" m/s2, Z: ");
+        Serial.print(ahrs.getAccelZ());
+        Serial.print(" m/s2, Accel Mag: ");
+        Serial.print(ahrs.getAccelMagnitude());
+        Serial.println(" m/s2");
+        Serial.print("Roll: ");
+        Serial.print(ahrs.getRoll());
+        Serial.print(" deg, Pitch: ");
+        Serial.print(ahrs.getPitch());
+        Serial.print(" deg, Yaw: ");
+        Serial.print(ahrs.getYaw());
+        Serial.println(" deg");
+
+
+        // Temperature
+        Serial.print("Temp: ");
+        Serial.print(ahrs.getTemperature());
+        Serial.println(" C");
     }
 
     // TODO: Implement main loop logic
