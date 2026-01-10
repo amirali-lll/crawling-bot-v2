@@ -78,12 +78,9 @@ private:
 
     // Constants
     static constexpr float G_CONST = 9.80665f;                // m/s^2
-    static constexpr float MOTION_THRESHOLD = 0.3f;          // m/s^2 - linear accel threshold
+    static constexpr float MOTION_THRESHOLD = 0.1f;          // m/s^2 - linear accel threshold
     static constexpr float GYRO_THRESHOLD = 10.0f;           // deg/s - rotation threshold
     static constexpr unsigned long STATIONARY_TIME_MS = 200; // ms - time to confirm stationary
-
-    // Helper function
-    void rotateVector(float *q, float *v, float *result);
 };
 
 #endif // AHRS_H

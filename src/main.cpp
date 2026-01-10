@@ -7,172 +7,187 @@
 #include <HealthCheck.h>
 
 // Pin definitions
-const uint8_t SERVO_PIN_DOWN = 16; // P1 on board
-const uint8_t SERVO_PIN_UP = 15;   // P2 on board
+const uint8_t SERVO_PIN_DOWN = 16;
+const uint8_t SERVO_PIN_UP = 15;
 
 // Global objects
 Display display;
 AHRS ahrs;
 ServoControl servoControl(SERVO_PIN_DOWN, SERVO_PIN_UP);
-Network *network; // Heap allocation needed for initialization order with display
+Network *network;
 Training training;
 HealthCheck healthCheck(&display, &ahrs, &servoControl);
+
+// متغیرهای کمکی برای محاسبه بازه‌ای (Interval Calculation)
+float lastPosX = 0, lastPosY = 0, lastPosZ = 0;
+unsigned long lastLogTime = 0;
 
 void setup()
 {
     Serial.begin(115200);
-    // Initialize Display
-    display.begin();
-    delay(2000);
 
+    // 1. Initialize Display
+    display.begin();
+    delay(1000);
     display.clear();
     display.print("RL Robot V2", 0, 0);
-    display.setCursor(0, 16);
-    display.print("Initializing...");
-    // Initialize Network
+    display.print("Booting...", 0, 16);
+
+    // 2. Initialize Network
     network = new Network(&display);
     network->begin();
     network->startOTATask();
 
-    // Get robot number 
-    display.setCursor(0, 32);
-    display.print("Getting Robot Number from EEPROM...");
+    // 3. Get Robot ID
     int robotNum = network->getRobotNumber();
-    
-    // Display robot info
     display.clear();
-    display.print("Robot #", 0, 0);
+    display.print("Robot ID: ", 0, 0);
     display.print(robotNum, 60, 0);
-    display.setCursor(0, 16);
-    display.print("Setup...");
 
-    // Initialize AHRS
-    display.clear();
-    display.print("Init AHRS...", 0, 0);
+    // 4. Initialize AHRS
+    display.print("Init IMU...", 0, 16);
     if (ahrs.begin())
     {
-        display.setCursor(0, 16);
-        display.print("AHRS OK");
+        Serial.println("AHRS Initialized");
+        display.print("OK", 80, 16);
     }
     else
     {
-        display.setCursor(0, 16);
-        display.print("AHRS Failed!");
+        Serial.println("AHRS Failed");
+        display.print("FAIL", 80, 16);
+        while (1)
+            ; // Stop if sensor fails
     }
-    delay(1000);
+    delay(500);
 
-    // Initialize Servos
-    display.clear();
-    display.print("Init Servos...", 0, 0);
+    // 5. Initialize Servos
     servoControl.begin();
-    display.setCursor(0, 16);
-    display.print("Servos OK");
+
+    // 6. Calibrate
+    display.clear();
+    display.print("Calibrating...", 0, 0);
+    display.print("Keep Still!", 0, 16);
+    Serial.println("Calibrating...");
+
+    // تابع جدید کالیبراسیون که در کد قبلی نوشتم
+    ahrs.calibrate();
+
+    display.clear();
+    display.print("Ready!", 0, 0);
     delay(500);
 
-    // Setup complete
-    display.clear();
-    display.print("Setup Complete", 0, 0);
-    delay(500);
-
-    // Calibrate AHRS
-    display.clear();
-    display.print("Calibrating AHRS", 0, 0);
-    ahrs.calibrateAccelGyro();
-    display.setCursor(0, 16);
-    display.print("Calibration Done");
-    delay(300);
-
-    // Run health check
+    // Health Check
     healthCheck.run();
 
-    // Reset measurement for interval tracking
-    ahrs.resetMeasurement();
+    // تنظیم زمان اولیه
+    lastLogTime = millis();
 }
 
 void loop()
 {
     ahrs.update();
 
-    static unsigned long lastMeasurement = 0;
     unsigned long currentTime = millis();
+    float dt_log = (currentTime - lastLogTime) / 1000.0;
 
-    if (currentTime - lastMeasurement >= 2000)
-    { // Every 2 seconds
-        lastMeasurement = currentTime;
+    if (dt_log >= 0.5)
+    {
+        lastLogTime = currentTime;
 
-        // Get measurement data
-        AHRS::MovementSnapshot measurement = ahrs.getMeasurement();
+        float velX = ahrs.getVelocityX();
+        float velY = ahrs.getVelocityY();
+        float velZ = ahrs.getVelocityZ();
 
-        // Display the interval data
+        float posX = ahrs.getPositionX();
+        float posY = ahrs.getPositionY();
+        float posZ = ahrs.getPositionZ();
+
+        float linAccX = ahrs.getLinearAccelX();
+        float linAccY = ahrs.getLinearAccelY();
+        float linAccZ = ahrs.getLinearAccelZ();
+
+        float speed = ahrs.getSpeed();
+
+        float dX = posX - lastPosX;
+        float dY = posY - lastPosY;
+        float dZ = posZ - lastPosZ;
+        float distInInterval = sqrt(dX * dX + dY * dY + dZ * dZ);
+
+        // آپدیت موقعیت قبلی برای دور بعد
+        lastPosX = posX;
+        lastPosY = posY;
+        lastPosZ = posZ;
+
+        // --- نمایش روی LCD ---
         display.clear();
 
-        // Line 1: Distance moved in interval (cm)
+        // خط 1: وضعیت حرکت و سرعت
         display.setCursor(0, 0);
-        display.print("Dist: ");
-        display.print(measurement.deltaDistance);
-        display.print(" cm");
+        display.print(ahrs.isMoving() ? "MOVING" : "STATIC");
+        display.print(" V:");
+        display.print(speed * 100, 0); // نمایش سرعت به cm/s
+        display.print("cm/s");
 
-        // Line 2: Average speed in interval (cm/s)
-        display.setCursor(0, 12);
-        display.print("Spd: ");
-        display.print(measurement.avgSpeed);
-        display.print(" cm/s");
+        // خط 2: موقعیت X و Y (به سانتیمتر)
+        display.setCursor(0, 16);
+        display.print("X:");
+        display.print(posX * 100, 0);
+        display.print(" Y:");
+        display.print(posY * 100, 0);
 
-        // Line 3: Average acceleration in interval (m/s^2)
-        display.setCursor(0, 24);
-        display.print("Acc: ");
-        display.print(measurement.avgAcceleration);
-        display.print(" m/s2");
-
-        // Line 4: Time interval
-        display.setCursor(0, 36);
-        display.print("Time: ");
-        display.print(measurement.deltaTime);
-        display.print(" s");
-        
+        // خط 3: موقعیت Z و مسافت فاصله
+        display.setCursor(0, 32);
+        display.print("Z:");
+        display.print(posZ * 100, 0);
+        display.print(" D:");
+        display.print(distInInterval * 100, 1);
 
         display.refresh();
 
-        // Reset for next measurement
-        ahrs.resetMeasurement();
+        // --- نمایش دقیق در Serial Monitor (برای دیباگ) ---
+        // فرمت CSV برای خوانایی بهتر یا رسم نمودار
+        Serial.print("Stat:");
+        Serial.print(ahrs.isMoving() ? "MOV" : "STP");
 
-        // Print to serial for debugging
-        Serial.print("Distance: ");
-        Serial.print(measurement.deltaDistance);
-        Serial.print(" cm, Speed: ");
-        Serial.print(measurement.avgSpeed);
-        Serial.print(" cm/s, Accel: ");
-        Serial.print(measurement.avgAcceleration);
-        Serial.println(" m/s2");
-        // add serial monitoring also for these data ax, ay, az (همون getAccX/Y/Z)roll, pitch, yaw accMag = sqrt(ax ^ 2 + ay ^ 2 + az ^ 2) dt velocityX, Y, Z و displacementX, Y, Z
-        Serial.print("Accel X: ");
-        Serial.print(ahrs.getAccelX());
-        Serial.print(" m/s2, Y: ");
-        Serial.print(ahrs.getAccelY());
-        Serial.print(" m/s2, Z: ");
-        Serial.print(ahrs.getAccelZ());
-        Serial.print(" m/s2, Accel Mag: ");
-        Serial.print(ahrs.getAccelMagnitude());
-        Serial.println(" m/s2");
-        Serial.print("Roll: ");
-        Serial.print(ahrs.getRoll());
-        Serial.print(" deg, Pitch: ");
-        Serial.print(ahrs.getPitch());
-        Serial.print(" deg, Yaw: ");
-        Serial.print(ahrs.getYaw());
-        Serial.println(" deg");
+        Serial.print(" | Pos(m) X:");
+        Serial.print(posX, 3);
+        Serial.print(" Y:");
+        Serial.print(posY, 3);
+        Serial.print(" Z:");
+        Serial.print(posZ, 3);
 
+        Serial.print(" | Vel(m/s) X:");
+        Serial.print(velX, 3);
+        Serial.print(" Y:");
+        Serial.print(velY, 3);
+        Serial.print(" Z:");
+        Serial.print(velZ, 3);
 
-        // Temperature
-        Serial.print("Temp: ");
-        Serial.print(ahrs.getTemperature());
-        Serial.println(" C");
-    }
+        Serial.print(" | Speed:");
+        Serial.print(speed, 3);
+        
+        Serial.print(" | LinAcc(m/s²) X:");
+        Serial.print(linAccX, 2);
+        Serial.print(" Y:");
+        Serial.print(linAccY, 2);
+        Serial.print(" Z:");
+        Serial.print(linAccZ, 2);
 
-    // TODO: Implement main loop logic
-    // - Read sensors
-    // - Process data
-    // - Execute training if active
-    // - Execute learned behavior
-    // - Control servos
+        Serial.print(" | ΔDist(cm):");
+        Serial.print(distInInterval * 100, 2);
+
+        Serial.print(" | Orient R:");
+        Serial.print(ahrs.getRoll(), 1);
+        Serial.print(" P:");
+        Serial.print(ahrs.getPitch(), 1);
+        Serial.print(" Y:");
+        Serial.print(ahrs.getYaw(), 1);
+
+        Serial.println();
+        }
+
+    // ================================================================
+    // 3. MAIN ROBOT LOGIC
+    // ================================================================
+    // اینجا کدهای مربوط به تصمیم‌گیری ربات و حرکت سروو‌ها قرار می‌گیرد
 }
