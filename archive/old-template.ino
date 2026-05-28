@@ -280,4 +280,3 @@ void loop()
     lcd.print("Main Loop");
     delay(1000); // Reduced delay to minimize blocking
     // TODO: Implement your main loop logic here
-}

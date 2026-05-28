@@ -91,9 +91,19 @@ A hands-on robotics platform where AI students apply **Reinforcement Learning** 
 
 3. **Configure Robot**
 
-   - Open serial monitor (115200 baud)
-   - Enter robot number (1-8) when prompted
-   - Robot creates WiFi AP: `ESP32-AP-{number}`
+* Turn on the robot using the **On/Off switch located underneath the robot body**.
+* The robot will create a Wi-Fi access point named **ESP32-AP-{number}** (where `{number}` is your robot’s assigned ID).
+  Connect to the robot’s Wi-Fi network and enter **a number from 1 to 8 (12345678)** in the password field.
+* After your device is connected to the robot, **check again whether the previous upload attempt** using the command
+
+  ```bash
+  pio run --target upload
+  ```
+
+  was successful. If the upload did not complete successfully, **run the same command again** to program the robot.
+* If you have followed all the steps and see that the system is uploading and the upload finishes successfully, **congratulations! 🎉**
+  This means you are now connected to the robot and can upload and run the code you have written on it. 🙂
+  
 
 4. **Start Coding**
    - Open `lib/Training/Training.cpp`

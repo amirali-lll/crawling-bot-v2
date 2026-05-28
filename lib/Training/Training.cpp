@@ -33,16 +33,6 @@ bool Training::hasLearnedBehavior() {
     return modelLoaded;
 }
 
-void Training::saveModel() {
-    // TODO: Implement model saving
-    Serial.println("Saving model (implementation pending)");
-}
-
-void Training::loadModel() {
-    // TODO: Implement model loading
-    Serial.println("Loading model (implementation pending)");
-    modelLoaded = false;
-}
 
 void Training::resetModel() {
     // TODO: Implement model reset
